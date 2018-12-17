@@ -15,20 +15,23 @@ case class Tag(tag: String) // header, metadata
 object advent_2018 {
 
   def main(args: Array[String]): Unit = {
-    doDay4()
+    doDay8()
   }
 
 
 
   def doDay8(): Unit = {
-    val path8 = "c:/Users/basvl/Documents/advent/input_08.csv"
+    val path8 = "/Users/basvlaming/Documents/input_08.csv"
 
     val data: List[String] = io.Source.fromFile(path8).getLines().toList
 
     val parsedData = data.flatMap(s => s.split(" ").map(_.toInt))
 
-    val taggedData = splitIntoNodes(parsedData)
+    val testTree: List[Int] = List(2,3 ,0 ,3 ,10, 11 ,12 ,1, 1, 0 ,1 ,99 ,2, 1, 1 ,2)
 
+//    val taggedData = splitIntoNodes(parsedData)
+    val taggedData = splitIntoNodes(testTree)
+    taggedData.foreach(println)
     val answer = taggedData.filter(_._4 == Tag("metadata")).map(_._1).sum
 
     println(answer)
@@ -40,7 +43,7 @@ object advent_2018 {
     val idx: List[(Int, Int)] = x.zipWithIndex // (value, index)
 
     val labelsSoFar = List((idx.head._1, idx.head._2, firstNode, Tag("header")),
-      (idx.tail.head._1, idx.tail.head._2, firstNode, Tag("header")))
+      (idx.tail.head._1, idx.tail.head._2, firstNode, Tag("header"))).reverse
     // node: always list them with childNodesLeft, metadataLeft
     @tailrec
     def tagPoints(currentNode: (Node, Int, Int),
@@ -49,7 +52,7 @@ object advent_2018 {
                   nodeCounter: Int,
                   pointsLabeled: List[(Int, Int, Node, Tag)]): List[(Int, Int, Node, Tag)] = {
       // pointsLabeled: value, index, node it's part of, tag (=header or metadata)
-      if (pointsToDo.isEmpty) pointsLabeled
+      if (pointsToDo.isEmpty) pointsLabeled.reverse
       else {
         // OPTIONS
         // header complete, and we need to create a new node;
@@ -57,12 +60,14 @@ object advent_2018 {
           // create a new node; take the first two next points as header
           // tag these points, and add them to the accumulator
           // reset the various variables
-          val node = Node(pointsToDo.head._1, pointsToDo.tail.head._2, nodeCounter + 1)
+          val node = Node(pointsToDo.head._1, pointsToDo.tail.head._1, nodeCounter + 1)
+//          println(s"newly created node: $node")
+//          println(pointsToDo)
           val updateUnfinished = (currentNode._1, currentNode._2 - 1, currentNode._3)
           val newUnfinished = updateUnfinished :: unfinishedNodes
           val newPointsToDo = pointsToDo.drop(2)
           val newLabels = List((pointsToDo.head._1, pointsToDo.head._2, node, Tag("header")),
-            (pointsToDo.tail.head._1, pointsToDo.tail.head._2, node, Tag("header")))
+            (pointsToDo.tail.head._1, pointsToDo.tail.head._2, node, Tag("header"))).reverse
           tagPoints((node, node.nrChildren, node.nrMetadata), newUnfinished, newPointsToDo, nodeCounter + 1,
             newLabels ::: pointsLabeled)
         } else { //  now, we don't have to create a new child node
@@ -72,9 +77,18 @@ object advent_2018 {
           val pointsToTag = pointsToDo.take(currentNode._3)
           val taggedPoints = pointsToTag.map { case (n, index) => (n, index, currentNode._1, Tag("metadata")) }
           val newPointsToDo = pointsToDo.drop(currentNode._3)
-          val newCurrentNode = unfinishedNodes.head
-          val newPointsLabeled = taggedPoints ::: pointsLabeled
-          tagPoints(newCurrentNode, unfinishedNodes.tail, newPointsToDo, nodeCounter, newPointsLabeled)
+          if (unfinishedNodes.isEmpty) {
+            println(s"tagged points $taggedPoints")
+            println(s"points still to do $newPointsToDo")
+            println(s"current node $currentNode")
+            println(s"pointsLabeled $pointsLabeled")
+          }
+
+          val newCurrentNode = if (unfinishedNodes.nonEmpty) unfinishedNodes.head else currentNode
+          val newUnfinishedNodes = if (unfinishedNodes.nonEmpty) unfinishedNodes.tail else List()
+          //          println(newCurrentNode)
+          val newPointsLabeled = taggedPoints.reverse ::: pointsLabeled
+          tagPoints(newCurrentNode, newUnfinishedNodes, newPointsToDo, nodeCounter, newPointsLabeled)
           //      }
         }
         // option 2: no metadata left --> continue with the previous unfinished node
