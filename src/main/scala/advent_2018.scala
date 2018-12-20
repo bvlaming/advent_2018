@@ -2,6 +2,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 
@@ -12,12 +13,72 @@ case class Point(coords: (Int, Int))
 case class Node(nrChildren: Int, nrMetadata: Int, label: Int)
 case class Tag(tag: String) // header, metadata
 
+case class Elf(id: Int)
+
+abstract class stateOfPlay {
+  val marbles: Array[Int]
+  val currentMarble: Int
+  val score: Map[Elf, Int]
+}
+
 object advent_2018 {
 
   def main(args: Array[String]): Unit = {
-    doDay8()
+    doDay9()
   }
 
+  def doDay9(): Unit = {
+
+    val (nr_players, max_marble_value) = (477, 70851)
+//    val (nr_players, max_marble_value) = (21, 6111)
+
+    val initState = ArrayBuffer(0, 2, 1, 3)
+
+    val results = updateState(initState, 3, 4, List(), nr_players, max_marble_value)
+
+    val maxScore = results.groupBy(_._1).map{case (elf, scores) => (elf, scores.map(_._2).sum)}.maxBy(_._2)
+    println(maxScore)
+  }
+
+
+  def insertAt[T](arr: ArrayBuffer[T], pos: Int, newVal: T): ArrayBuffer[T] = {
+    arr.insert(pos, newVal)
+    arr
+  }
+
+  def removedAt[T](arr: ArrayBuffer[T], pos: Int): (ArrayBuffer[T], T) = {
+    val el = arr(pos)
+    arr.remove(pos)
+    (arr, el)
+  }
+
+  @tailrec
+def updateState(marbles: ArrayBuffer[Int],
+                indexMarble: Int,
+                nextMarble: Int,
+                score: List[(Elf, Long)],
+                nrPlayers: Int,
+                maxSteps: Int): List[(Elf, Long)] = {
+  if (nextMarble == maxSteps) {
+    score
+  } else {
+    if (nextMarble % 23 == 0) {
+      val elfPlaying = Elf(nextMarble % nrPlayers)
+      val marbleTakenAt = if (indexMarble < 7) indexMarble - 7 + marbles.length else indexMarble - 7
+      val (newMarbles, marbleTaken) = removedAt(marbles, marbleTakenAt)
+      val newScore = (elfPlaying, (nextMarble + marbleTaken).toLong) :: score
+      updateState(newMarbles, marbleTakenAt, nextMarble + 1, newScore, nrPlayers, maxSteps)
+    }
+    else
+    {
+      if (nextMarble % 1000 == 0) {println(nextMarble)}
+//      println(marbles)
+      val placeAt = if (indexMarble > (marbles.length - 2)) indexMarble + 2 - marbles.length else indexMarble + 2
+      val newMarbles = insertAt(marbles, placeAt, nextMarble)
+      updateState(newMarbles, placeAt, nextMarble + 1, score, nrPlayers, maxSteps)
+    }
+  }
+}
 
 
   def doDay8(): Unit = {
@@ -35,6 +96,9 @@ object advent_2018 {
     val answer = taggedData.filter(_._4 == Tag("metadata")).map(_._1).sum
 
     println(answer)
+
+    // for part 2, it's just a matter of tracking the child nodes and their values. Can't be bothered for now, will
+    // get back to it. Maybe.
   }
 
   def splitIntoNodes(x: List[Int]): List[(Int, Int, Node, Tag)] = {
