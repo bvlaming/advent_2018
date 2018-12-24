@@ -9,6 +9,7 @@ import scala.io.Source
 case class Guard(id: Int)
 
 case class Point(coords: (Int, Int))
+case class Velocity(vel: (Int, Int))
 
 case class Node(nrChildren: Int, nrMetadata: Int, label: Int)
 case class Tag(tag: String) // header, metadata
@@ -24,8 +25,92 @@ abstract class stateOfPlay {
 object advent_2018 {
 
   def main(args: Array[String]): Unit = {
-    doDay9()
+    doDay11()
   }
+
+
+  def doDay11(): Unit = {
+    val path11 = "/Users/basvlaming/Documents/input_11.csv"
+    val testpath11 = "/Users/basvlaming/Documents/input_11_test.csv"
+
+    val data: List[String] = io.Source.fromFile(path11).getLines().toList
+
+
+  }
+
+  //// DAY 10 /////
+
+  def doDay10(): Unit = {
+    val path10 = "/Users/basvlaming/Documents/input_10.csv"
+    val testpath10 = "/Users/basvlaming/Documents/input_10_test.csv"
+
+    val data: List[String] = io.Source.fromFile(path10).getLines().toList
+
+    val parsedData = data.map(parseDay10)
+
+    val max_horizons = for (t <- Range(0, 100000) )
+    yield {(positions(t, parsedData), maxHorizontalRow(positions(t, parsedData)), t)}
+
+    val message: (List[Point], Int, Int) = max_horizons.maxBy(_._2)
+
+    println(message._3)
+
+    println(box_message(message._1))
+
+    visualise2(message._1)
+
+  }
+
+
+  def visualise2(message: List[Point]): Unit = {
+    // take the message; print each
+    val box = box_message(message)
+    val x0 = box._1 - 3
+    val xl = box._2 - box._1 + 10
+    val points = message.map(p => p.coords)
+    val points_by_y: Map[Int, List[Int]] = points.groupBy(_._2).map{case (y, lxy) => (y, lxy.map(_._1))}
+    val all_y = Range(box._3 - 2, box._4 + 2)
+    val outputToVis = all_y.toList.map(y => (y, points_by_y.getOrElse(y, List[Int]())))
+    val output = outputToVis.map{case (y, lx) => (y, visualiseX(lx, x0, xl))}
+    output.foreach{case (y, lx) => println(lx.mkString)}
+  }
+
+  def visualiseX(input: List[Int], x0: Int, length: Int): ArrayBuffer[Char] = {
+    // make an array of length Int with e.g. '.'; make X for all the x's of the input
+    val arr: ArrayBuffer[Char] = ArrayBuffer.fill(length)('.')
+    for (x <- input) {
+      arr(x - x0) = 'O'
+    }
+    arr
+  }
+
+  def box_message(message: List[Point]): (Int, Int, Int, Int) = {
+    val xs = message.map(_.coords._1)
+    val ys = message.map(_.coords._2)
+    (xs.min, xs.max, ys.min, ys.max)
+  }
+
+
+  def bool(c: Char): Boolean = {
+    c.isDigit || c == '-'
+  }
+
+  def maxHorizontalRow(points: List[Point]): Int = {
+      points.map(p => p.coords._1).groupBy(identity).map(_._2.length).max
+  }
+
+  def positions(time: Int, initial: List[(Point, Int, Int)]): List[Point] = {
+    initial.map { case (p, vx, vy) => Point((p.coords._1 + time * vx, p.coords._2 + time * vy))
+    }
+  }
+
+  def parseDay10(row: String): (Point, Int, Int) = {
+    val row2 = row.replace("> velocity=<", ",")
+    val splitRow = row2.split(",").map(_.filter(p => bool(p)).toInt)
+    (Point(splitRow(0), splitRow(1)), splitRow(2), splitRow(3))
+  }
+
+
 
   def doDay9(): Unit = {
 
