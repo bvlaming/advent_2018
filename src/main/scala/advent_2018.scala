@@ -28,14 +28,76 @@ object advent_2018 {
     doDay11()
   }
 
+  def doDay12(): Unit = {
+        val path12 = "/Users/basvlaming/Documents/input_12.csv"
+        val testpath12 = "/Users/basvlaming/Documents/input_12_test.csv"
 
+        val data: List[String] = io.Source.fromFile(path12).getLines().toList
+
+  }
+
+
+  /// DAY 11 ////
   def doDay11(): Unit = {
-    val path11 = "/Users/basvlaming/Documents/input_11.csv"
-    val testpath11 = "/Users/basvlaming/Documents/input_11_test.csv"
 
-    val data: List[String] = io.Source.fromFile(path11).getLines().toList
+      val input = 9810
+    val grid = createGrid(300, 300, input)
 
+    val totalPower = grid.values.sum
+    println(totalPower)
 
+    println(scanSquares(3, grid))
+    println(grid.values.max)
+    println(grid.values.min)
+
+    val maxPerSquare = for (g <- Range(10, 40)) yield (g, scanSquares(g, grid))
+
+    val bestSquare = maxPerSquare.maxBy(_._2._3)
+
+    println(bestSquare)
+  }
+
+  def scanSquares(gridSize: Int, gridMap: Map[(Int, Int), Int]): (Int, Int, Int) = {
+
+    val maxLength = 300 - gridSize
+    val numberOfSquares = Range(1, maxLength + 2).length * Range(1, maxLength + 2).length
+    println(s"$numberOfSquares squares to compare")
+    val powerSquares = for (x0 <- Range(1, maxLength + 2);
+                            y0 <- Range(1, maxLength + 2)) yield {
+      (x0, y0, powerOfSquare(x0, y0, gridSize, gridMap))
+    }
+
+    val result = powerSquares.maxBy(_._3)
+
+    println(s"Grid size $gridSize, best showing for $result")
+    result
+  }
+
+  def createGrid(X: Int, Y: Int, input: Int): Map[(Int, Int), Int] = {
+    val listPoints = (for (x <- Range(1, X + 1);
+         y <- Range(1, Y + 1))
+      yield {
+        (x, y, powerLevel(x, y, input))
+      }).toList
+
+    listPoints.map(t => ((t._1, t._2), t._3)).toMap
+  }
+
+  def powerLevel(x: Int, y: Int, input: Int): Int = {
+    val rackID = x + 10
+    val powerInit = rackID * y + input
+    val powerNext = rackID * powerInit
+    val hund = if (powerNext < 100) 0 else powerNext.toString.reverse.tail.tail.head.asDigit
+    hund - 5
+  }
+
+  def powerOfSquare(x: Int, y: Int, gridSize: Int, gridMap: Map[(Int, Int), Int]): Int = {
+    val listPowers: Seq[Int] = for (n <- Range(0, gridSize);
+                                    m <- Range(0, gridSize)) yield {
+      gridMap((x + n, y + m))
+    }
+
+    listPowers.sum
   }
 
   //// DAY 10 /////
